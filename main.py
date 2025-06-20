@@ -1,4 +1,10 @@
 from json import dump, load, JSONDecodeError
+from PySide6.QtWidgets import (
+    QMainWindow, QApplication, QGridLayout, QWidget, QLabel, QTabWidget,
+    QLineEdit, QPushButton
+    )
+from PySide6.QtCore import Qt
+from win32api import GetSystemMetrics
 
 class Recipe:
     def __init__(self, name, description, ingredients, instructions):
@@ -78,7 +84,110 @@ class Recipe:
         except JSONDecodeError:
             raise ValueError("Error decoding the recipe file.")
 
-    
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Recipe Manager")
+        self.__ScreenWidth = GetSystemMetrics(0)
+        self.__ScreenHeight = GetSystemMetrics(1)
+        self.__appWidth = 800
+        self.__appHeight = 600
+        self.setGeometry(
+            self.__ScreenWidth / 2 - self.__appWidth / 2, 
+            self.__ScreenHeight / 2 - self.__appHeight / 2, 
+            self.__appWidth, 
+            self.__appHeight
+        )
+
+        layout = QGridLayout()
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
+
+        titleLabel = QLabel("Recipe Manager", self)
+        titleLabel.setStyleSheet("font-size: 24px; font-weight: normal; font-family: Brass Mono;")
+
+        layout.addWidget(titleLabel, 0, 0, Qt.AlignmentFlag.AlignCenter)
+        
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        self.loadingPage = QWidget()
+        self.savePage = QWidget()
+
+        tabWidget = QTabWidget()
+        tabWidget.addTab(self.loadingPage, "Loading")
+        tabWidget.addTab(self.savePage, "Saving")
+
+        layout.addWidget(tabWidget, 1, 0, 1, 1)
+        
+        layout.setRowStretch(0, 0)
+        layout.setRowStretch(1, 1)
+        
+        layout.setColumnStretch(0, 1)
+        
+        self.initLoadTab()
+        self.initSaveTab()
+
+    def initSaveTab(self):
+        layout = QGridLayout(self.savePage)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Add input fields for recipe details
+        titleLabel = QLabel("Title", self)
+        layout.addWidget(titleLabel, 0, 0)
+        self.titleInput = QLineEdit(self)
+        layout.addWidget(self.titleInput, 0, 1)
+
+        # Add input fields for recipe description
+        descriptionLabel = QLabel("Description", self)
+        layout.addWidget(descriptionLabel, 1, 0)
+        self.descriptionInput = QLineEdit(self)
+        layout.addWidget(self.descriptionInput, 1, 1)
+
+        # Add input fields for ingredients
+        ingredientsLabel = QLabel("Ingredients (comma separated)", self)
+        layout.addWidget(ingredientsLabel, 2, 0)
+        self.ingredientsInput = QLineEdit(self)
+        layout.addWidget(self.ingredientsInput, 2, 1)
+
+        # Add input fields for instructions
+        instructionsLabel = QLabel("Instructions (comma separated)", self)
+        layout.addWidget(instructionsLabel, 3, 0)
+        self.instructionsInput = QLineEdit(self)
+        layout.addWidget(self.instructionsInput, 3, 1)
+
+        # Add a button to save the recipe
+        saveButton = QPushButton("Save Recipe", self)
+        saveButton.clicked.connect(lambda: self.saveRecipe())
+        layout.addWidget(saveButton, 4, 0, 1, 2, Qt.AlignmentFlag.AlignRight)
+
+    def initLoadTab(self):
+        layout = QGridLayout(self.loadingPage)
+        label = QLabel("Load your recipe here", self)
+        layout.addWidget(label, 0, 0, Qt.AlignmentFlag.AlignCenter)
+
+    def saveRecipe(self):
+        name = self.titleInput.text()
+        description = self.descriptionInput.text()
+        ingredients = self.ingredientsInput.text().split(',')
+        instructions = self.instructionsInput.text().split(',')
+        try:
+            recipe = Recipe(name, description, ingredients, instructions)
+            recipe.saveRecipe()
+            print(f"Recipe '{name}' saved successfully.")
+        except ValueError as e:
+            print(f"Error saving recipe: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        finally:
+            self.titleInput.clear()
+            self.descriptionInput.clear()
+            self.ingredientsInput.clear()
+            self.instructionsInput.clear()
     
 if __name__ == "__main__":
-    pass
+    app = QApplication([])
+    window = MainWindow()
+    window.show()
+    app.exec()
