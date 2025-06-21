@@ -4,7 +4,7 @@ from json import dump, load, JSONDecodeError
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QMainWindow, QApplication, QGridLayout, QWidget, QLabel, QTabWidget,
-    QLineEdit, QPushButton
+    QLineEdit, QPushButton, QFileDialog
 )
 from win32api import GetSystemMetrics
 
@@ -213,11 +213,17 @@ class MainWindow(QMainWindow):
         self.currentFolderLabel = QLabel(f"Current Recipe Folder: {self.currentSaveFolder}", self)
         layout.addWidget(self.currentFolderLabel, 2, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
 
+        # Folder selection screen
+        fileNameButton = QPushButton("Select Recipe File", self)
+        fileNameButton.clicked.connect(self.selectRecipeFolder)
+        layout.addWidget(fileNameButton, 3, 0, 1, 2, Qt.AlignmentFlag.AlignRight)
+
     def saveRecipe(self):
         name = self.titleInput.text()
         description = self.descriptionInput.text()
         ingredients = self.ingredientsInput.text().split(',')
         instructions = self.instructionsInput.text().split(',')
+
         try:
             recipe = Recipe(name, description, ingredients, instructions, self.currentSaveFolder)
             recipe.saveRecipe()
@@ -246,6 +252,17 @@ class MainWindow(QMainWindow):
             print(f"Recipe folder set to: {self.currentSaveFolder}")
         except Exception as e:
             print(f"Failed to set recipe folder: {e}")
+        finally:
+            self.folderInput.clear()
+
+    def selectRecipeFolder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Recipe Folder", self.currentSaveFolder)
+        if folder:
+            self.folderInput.setText(folder)
+            self.setRecipeFolder()
+        else:
+            print("No folder selected.")
+
 
 if __name__ == "__main__":
     app = QApplication([])
